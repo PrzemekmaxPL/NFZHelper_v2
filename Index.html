@@ -1,0 +1,358 @@
+
+<!DOCTYPE html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NFZ Helper</title>
+    <meta
+      name="description"
+      content="Znajdź najszybciej dostępną placówkę NFZ na podstawie skierowania."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"]
+            },
+            colors: {
+              brand: {
+                50: "#f0fdfa",
+                100: "#ccfbf1",
+                200: "#99f6e4",
+                300: "#5eead4",
+                400: "#2dd4bf",
+                500: "#14b8a6",
+                600: "#0d9488",
+                700: "#0f766e",
+                800: "#115e59",
+                900: "#134e4a"
+              }
+            },
+            boxShadow: {
+              card: "0 1px 2px rgba(15,23,42,.04), 0 8px 24px -8px rgba(15,23,42,.08)",
+              cta: "0 1px 2px rgba(15,118,110,.2), 0 8px 16px -4px rgba(15,118,110,.25)"
+            }
+          }
+        }
+      };
+    </script>
+    <style>
+      html { -webkit-text-size-adjust: 100%; }
+      body {
+        font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+        background:
+          radial-gradient(60rem 30rem at 50% -10rem, #ccfbf1 0%, transparent 60%),
+          #fafaf9;
+      }
+      summary::-webkit-details-marker { display: none; }
+      summary::marker { content: ""; }
+    </style>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🏥%3C/text%3E%3C/svg%3E" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <meta name="theme-color" content="#0d9488" />
+    <link rel="apple-touch-icon" href="./icons/icon.svg" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="NFZ Helper" />
+    <meta name="mobile-web-app-capable" content="yes" />
+  </head>
+  <body class="font-sans text-zinc-900 antialiased">
+    <div class="mx-auto max-w-3xl px-5 py-10 sm:py-16">
+      <header class="mb-10 sm:mb-14">
+        <div class="flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <span
+              class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-600 text-white shadow-cta"
+              aria-hidden="true"
+            >
+              <!-- medical cross -->
+              <svg viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor">
+                <path d="M10 3h4a1 1 0 0 1 1 1v5h5a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-5v5a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-5H4a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h5V4a1 1 0 0 1 1-1Z" />
+              </svg>
+            </span>
+            <span class="text-sm font-medium uppercase tracking-[0.18em] text-brand-700">
+              NFZ Helper
+            </span>
+          </div>
+          <button
+            type="button"
+            id="install-btn"
+            class="hidden items-center justify-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-zinc-700 ring-1 ring-zinc-200 transition hover:bg-zinc-50 active:translate-y-px"
+          >
+            <svg viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4 text-brand-600">
+              <path d="M10 2a1 1 0 0 1 1 1v8.59l2.3-2.3a1 1 0 1 1 1.4 1.42l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 1 1 1.4-1.42l2.3 2.3V3a1 1 0 0 1 1-1Z" />
+              <path d="M4 14a1 1 0 0 1 1 1v1h10v-1a1 1 0 1 1 2 0v2a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1Z" />
+            </svg>
+            <span class="hidden sm:inline">Zainstaluj aplikację</span>
+            <span class="sm:hidden">Zainstaluj</span>
+          </button>
+        </div>
+        <h1 class="mt-6 text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl">
+          Znajdź wolny termin u lekarza w&nbsp;Twojej okolicy.
+        </h1>
+        <p class="mt-3 max-w-prose text-base text-zinc-600">
+          Przeszukuje publiczne dane NFZ, łączy z&nbsp;Twoją lokalizacją i&nbsp;pokazuje placówki,
+          do&nbsp;których faktycznie dostaniesz się najszybciej.
+        </p>
+
+        <div
+          id="install-hint"
+          class="mt-5 hidden items-start gap-3 rounded-xl bg-brand-50 p-4 text-sm text-brand-900 ring-1 ring-brand-100"
+          role="note"
+        >
+          <svg viewBox="0 0 20 20" fill="currentColor" class="mt-0.5 h-5 w-5 flex-shrink-0 text-brand-600" aria-hidden="true">
+            <path d="M10 3a1 1 0 0 1 1 1v7.59l1.3-1.3a1 1 0 1 1 1.4 1.42l-3 3a1 1 0 0 1-1.4 0l-3-3a1 1 0 1 1 1.4-1.42L9 11.59V4a1 1 0 0 1 1-1Z"/>
+            <path d="M4 13a1 1 0 0 1 1 1v2h10v-2a1 1 0 1 1 2 0v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1Z"/>
+          </svg>
+          <div class="flex-1">
+            <p class="font-medium">Zainstaluj na ekranie głównym iPhone'a</p>
+            <p class="mt-1 text-brand-800/90">
+              Stuknij <span class="font-semibold">Udostępnij</span>
+              <svg viewBox="0 0 20 20" fill="currentColor" class="inline-block h-4 w-4 align-text-bottom"><path d="M10 2.5a.75.75 0 0 1 .53.22l3 3a.75.75 0 1 1-1.06 1.06L10.75 5.06V12a.75.75 0 0 1-1.5 0V5.06L7.53 6.78a.75.75 0 1 1-1.06-1.06l3-3A.75.75 0 0 1 10 2.5Z"/><path d="M5.5 9.5A1.5 1.5 0 0 0 4 11v5A1.5 1.5 0 0 0 5.5 17.5h9A1.5 1.5 0 0 0 16 16v-5a1.5 1.5 0 0 0-1.5-1.5h-2a.75.75 0 0 1 0-1.5h2A3 3 0 0 1 17.5 11v5A3 3 0 0 1 14.5 19h-9A3 3 0 0 1 2.5 16v-5A3 3 0 0 1 5.5 8h2a.75.75 0 0 1 0 1.5h-2Z"/></svg>
+              w&nbsp;pasku Safari, a&nbsp;potem
+              <span class="font-semibold">Do ekranu początkowego</span>.
+            </p>
+          </div>
+          <button
+            type="button"
+            id="install-hint-dismiss"
+            class="-m-1 rounded p-1 text-brand-700/70 transition hover:bg-brand-100 hover:text-brand-900"
+            aria-label="Ukryj"
+          >
+            <svg viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4"><path d="M5.7 4.3a1 1 0 0 0-1.4 1.4L8.6 10l-4.3 4.3a1 1 0 1 0 1.4 1.4L10 11.4l4.3 4.3a1 1 0 0 0 1.4-1.4L11.4 10l4.3-4.3a1 1 0 0 0-1.4-1.4L10 8.6 5.7 4.3Z"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <form
+        id="search-form"
+        class="space-y-8 rounded-2xl bg-white p-6 shadow-card ring-1 ring-zinc-900/5 sm:p-8"
+        novalidate
+      >
+        <details id="ocr-section" class="group rounded-xl bg-zinc-50/80 ring-1 ring-zinc-900/5">
+          <summary
+            class="flex cursor-pointer select-none items-center justify-between gap-3 rounded-xl p-4 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
+          >
+            <span class="flex items-center gap-3">
+              <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white text-base shadow-sm ring-1 ring-zinc-900/5">📷</span>
+              Zeskanuj wydruk skierowania
+              <span class="hidden text-xs font-normal text-zinc-500 sm:inline">— OCR działa lokalnie, zdjęcie nie opuszcza przeglądarki.</span>
+            </span>
+            <svg class="h-4 w-4 text-zinc-400 transition group-open:rotate-180" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M5.23 7.21a.75.75 0 0 1 1.06 0L10 10.94l3.71-3.73a.75.75 0 1 1 1.06 1.06l-4.24 4.26a.75.75 0 0 1-1.06 0L5.23 8.27a.75.75 0 0 1 0-1.06Z" />
+            </svg>
+          </summary>
+
+          <div class="space-y-4 px-4 pb-4 sm:px-5 sm:pb-5">
+            <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <label for="ocr-camera" class="flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-3 text-sm font-medium text-white shadow-cta transition hover:bg-brand-700 active:translate-y-px">
+                <svg viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm0 6.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5Z"/><path d="M9.4 4 8 5.5H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-10a2 2 0 0 0-2-2h-3L14.6 4H9.4Z" fill-opacity=".85"/></svg>
+                Zrób zdjęcie
+              </label>
+              <input type="file" id="ocr-camera" accept="image/*" capture="environment" class="hidden" />
+
+              <label for="ocr-file" class="flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-white px-4 py-3 text-sm font-medium text-zinc-800 ring-1 ring-zinc-200 transition hover:bg-zinc-50 active:translate-y-px">
+                <svg viewBox="0 0 24 24" class="h-5 w-5 text-zinc-500" fill="currentColor"><path d="M5 3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.83a2 2 0 0 0-.59-1.42L16.59 3.59A2 2 0 0 0 15.17 3H5Z" fill-opacity=".15"/><path fill-rule="evenodd" d="M5 3h10.17a2 2 0 0 1 1.42.59l3.82 3.82a2 2 0 0 1 .59 1.42V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm0 1.5a.5.5 0 0 0-.5.5v14a.5.5 0 0 0 .5.5h14a.5.5 0 0 0 .5-.5V9h-3.5a2 2 0 0 1-2-2V4.5H5Zm10 1.06V7a.5.5 0 0 0 .5.5h1.44L15 5.56Z" clip-rule="evenodd"/></svg>
+                Wybierz plik
+              </label>
+              <input type="file" id="ocr-file" accept="image/*" class="hidden" />
+            </div>
+
+            <div id="ocr-progress" class="hidden space-y-2" role="status" aria-live="polite">
+              <div class="flex items-center justify-between gap-2 text-xs text-zinc-600">
+                <span class="flex items-center gap-2 font-medium">
+                  <svg class="h-4 w-4 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" opacity="0.25" />
+                    <path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+                  </svg>
+                  <span id="ocr-label">Pobieram silnik OCR…</span>
+                </span>
+                <span id="ocr-pct" class="tabular-nums text-zinc-500">0%</span>
+              </div>
+              <div class="h-1.5 w-full overflow-hidden rounded-full bg-zinc-200/70">
+                <div id="ocr-bar" class="h-full bg-brand-600 transition-all duration-150" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <div id="ocr-result" class="hidden rounded-lg bg-white p-4 ring-1 ring-zinc-900/5">
+              <p class="text-xs font-semibold uppercase tracking-wider text-zinc-500">Rozpoznano</p>
+              <ul id="ocr-result-list" class="mt-2 space-y-1.5 text-sm text-zinc-700"></ul>
+              <p class="mt-3 text-xs text-zinc-500">Sprawdź pola poniżej i&nbsp;popraw, jeśli trzeba.</p>
+            </div>
+
+            <p id="ocr-error" class="hidden text-sm text-red-600"></p>
+          </div>
+        </details>
+
+        <fieldset class="space-y-6">
+          <legend class="sr-only">Dane skierowania</legend>
+
+          <div>
+            <label for="benefit" class="flex items-baseline justify-between text-xs font-semibold uppercase tracking-wider text-zinc-500">
+              <span>Świadczenie</span>
+              <span class="font-normal text-zinc-400 normal-case tracking-normal">np. 1610 lub kardiologiczna</span>
+            </label>
+            <input
+              type="text"
+              id="benefit"
+              name="benefit"
+              placeholder="Wpisz nazwę albo kod resortowy"
+              autocomplete="off"
+              required
+              list="benefit-codes"
+              class="mt-2 block w-full rounded-lg border-0 bg-white px-3.5 py-3 text-base text-zinc-900 placeholder:text-zinc-400 ring-1 ring-zinc-200 transition focus:outline-none focus:ring-2 focus:ring-brand-600"
+            />
+            <datalist id="benefit-codes"></datalist>
+            <p id="benefit-hint" class="mt-2 text-xs text-zinc-500"></p>
+          </div>
+
+          <div>
+            <span class="block text-xs font-semibold uppercase tracking-wider text-zinc-500">Pacjent</span>
+            <div class="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+              <div class="inline-flex rounded-lg bg-zinc-100 p-1 text-sm font-medium">
+                <label class="relative">
+                  <input type="radio" name="patient" value="adult" class="peer sr-only" checked />
+                  <span class="block cursor-pointer rounded-md px-4 py-2 text-zinc-600 peer-checked:bg-white peer-checked:text-zinc-900 peer-checked:shadow-sm">dorosły</span>
+                </label>
+                <label class="relative">
+                  <input type="radio" name="patient" value="child" class="peer sr-only" />
+                  <span class="block cursor-pointer rounded-md px-4 py-2 text-zinc-600 peer-checked:bg-white peer-checked:text-brand-700 peer-checked:shadow-sm">dziecko (do 18&nbsp;r.ż.)</span>
+                </label>
+              </div>
+
+              <div id="age-band" class="hidden">
+                <div class="inline-flex flex-wrap gap-1 rounded-lg bg-brand-50 p-1 text-sm font-medium ring-1 ring-brand-100">
+                  <label class="relative">
+                    <input type="radio" name="age" value="infant" class="peer sr-only" />
+                    <span class="block cursor-pointer rounded-md px-3 py-1.5 text-brand-700 peer-checked:bg-white peer-checked:text-zinc-900 peer-checked:shadow-sm">do 1&nbsp;r.ż.</span>
+                  </label>
+                  <label class="relative">
+                    <input type="radio" name="age" value="child" class="peer sr-only" checked />
+                    <span class="block cursor-pointer rounded-md px-3 py-1.5 text-brand-700 peer-checked:bg-white peer-checked:text-zinc-900 peer-checked:shadow-sm">1–12 lat</span>
+                  </label>
+                  <label class="relative">
+                    <input type="radio" name="age" value="teen" class="peer sr-only" />
+                    <span class="block cursor-pointer rounded-md px-3 py-1.5 text-brand-700 peer-checked:bg-white peer-checked:text-zinc-900 peer-checked:shadow-sm">13–17 lat</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 gap-6 sm:grid-cols-[1fr_auto] sm:items-start">
+            <div>
+              <label for="province" class="flex items-baseline justify-between text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                <span>Województwo</span>
+                <span class="font-normal text-zinc-400 normal-case tracking-normal">opcjonalne — domyślnie cała Polska</span>
+              </label>
+              <div class="relative mt-2">
+                <select
+                  id="province"
+                  name="province"
+                  class="block w-full appearance-none rounded-lg border-0 bg-white px-3.5 py-3 pr-10 text-base text-zinc-900 ring-1 ring-zinc-200 transition focus:outline-none focus:ring-2 focus:ring-brand-600"
+                ></select>
+                <svg viewBox="0 0 20 20" fill="currentColor" class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400">
+                  <path d="M5.23 7.21a.75.75 0 0 1 1.06 0L10 10.94l3.71-3.73a.75.75 0 1 1 1.06 1.06l-4.24 4.26a.75.75 0 0 1-1.06 0L5.23 8.27a.75.75 0 0 1 0-1.06Z" />
+                </svg>
+              </div>
+            </div>
+
+            <div>
+              <span class="block text-xs font-semibold uppercase tracking-wider text-zinc-500">Tryb</span>
+              <div class="mt-2 inline-flex rounded-lg bg-zinc-100 p-1 text-sm font-medium">
+                <label class="relative">
+                  <input type="radio" name="case" value="1" class="peer sr-only" checked />
+                  <span class="block cursor-pointer rounded-md px-4 py-2 text-zinc-600 peer-checked:bg-white peer-checked:text-zinc-900 peer-checked:shadow-sm">stabilny</span>
+                </label>
+                <label class="relative">
+                  <input type="radio" name="case" value="2" class="peer sr-only" />
+                  <span class="block cursor-pointer rounded-md px-4 py-2 text-zinc-600 peer-checked:bg-white peer-checked:text-amber-700 peer-checked:shadow-sm">pilny (CITO)</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </fieldset>
+
+        <div class="flex flex-col gap-3 border-t border-zinc-100 pt-6 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+          <div class="flex flex-wrap items-center gap-3">
+            <span id="locate-status" class="hidden items-center gap-2 text-sm text-brand-700">
+              <svg viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4"><path fill-rule="evenodd" d="M16.7 5.7a1 1 0 0 1 0 1.4l-7.3 7.3a1 1 0 0 1-1.4 0L3.3 9.7a1 1 0 1 1 1.4-1.4L8.7 12.3l6.6-6.6a1 1 0 0 1 1.4 0Z" clip-rule="evenodd"/></svg>
+              Lokalizacja udostępniona
+            </span>
+            <button
+              type="button"
+              id="locate-btn"
+              class="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 ring-1 ring-zinc-200 transition hover:bg-zinc-50 active:translate-y-px sm:py-2"
+            >
+              <svg viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4 text-zinc-500"><path fill-rule="evenodd" d="M10 2a6 6 0 0 0-6 6c0 4.5 6 10 6 10s6-5.5 6-10a6 6 0 0 0-6-6Zm0 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4Z" clip-rule="evenodd"/></svg>
+              Udostępnij lokalizację
+            </button>
+
+            <label id="radius-control" class="hidden items-center gap-2 text-sm text-zinc-600">
+              <span>w promieniu</span>
+              <div class="relative">
+                <select
+                  id="radius"
+                  class="appearance-none rounded-lg border-0 bg-white py-1.5 pl-3 pr-8 text-sm font-medium text-zinc-800 ring-1 ring-zinc-200 transition focus:outline-none focus:ring-2 focus:ring-brand-600"
+                >
+                  <option value="">bez limitu</option>
+                  <option value="10">10 km</option>
+                  <option value="25">25 km</option>
+                  <option value="50" selected>50 km</option>
+                  <option value="100">100 km</option>
+                </select>
+                <svg viewBox="0 0 20 20" fill="currentColor" class="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400">
+                  <path d="M5.23 7.21a.75.75 0 0 1 1.06 0L10 10.94l3.71-3.73a.75.75 0 1 1 1.06 1.06l-4.24 4.26a.75.75 0 0 1-1.06 0L5.23 8.27a.75.75 0 0 1 0-1.06Z" />
+                </svg>
+              </div>
+            </label>
+          </div>
+
+          <button
+            type="submit"
+            id="submit-btn"
+            class="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-6 py-3 text-sm font-semibold text-white shadow-cta transition hover:bg-brand-700 active:translate-y-px disabled:opacity-60 sm:py-2.5"
+          >
+            <span id="submit-label">Znajdź placówki</span>
+            <svg id="submit-spinner" class="hidden h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" opacity="0.25" />
+              <path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+            </svg>
+          </button>
+        </div>
+
+        <p id="form-error" class="hidden rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-100"></p>
+      </form>
+
+      <div
+        id="empty"
+        class="mt-10 hidden rounded-2xl bg-white p-8 text-center text-zinc-600 shadow-card ring-1 ring-zinc-900/5"
+      ></div>
+
+            <section id="results-section" class="mt-12 hidden">
+        <div class="mb-6 flex items-baseline justify-between gap-4">
+          <h2 id="results-heading" class="text-lg font-semibold tracking-tight text-zinc-900"></h2>
+          <span id="results-meta" class="hidden text-xs text-zinc-500 sm:block"></span>
+        </div>
+        <div id="results" class="space-y-4"></div>
+      </section>
+
+      <footer class="mt-16 text-xs text-zinc-400">
+        Dane: <a href="https://api.nfz.gov.pl/app-itl-api/" class="underline decoration-zinc-300 underline-offset-2 hover:text-zinc-600">api.nfz.gov.pl/app-itl-api</a>.
+        OCR: <span class="whitespace-nowrap">tesseract.js</span> w&nbsp;przeglądarce.
+      </footer>
+    </div>
+
+    <script type="module" src="./js/app.js"></script>
+    <script type="module" src="./js/install.js"></script>
+  </body>
+</html>
