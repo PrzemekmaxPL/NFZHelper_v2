@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>NFZ Helper v2</title>
+  <title>NFZ Helper</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -19,14 +19,15 @@
         <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-teal-600 text-white shadow font-bold text-lg">🏥</span>
         <span class="text-sm font-semibold tracking-wider uppercase text-teal-700">NFZ Helper</span>
       </div>
-      <h1 class="mt-4 text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900">Znajdź wolny termin NFZ</h1>
-      <p class="mt-1 text-sm text-zinc-600">Pobiera aktualne wolne terminy bezpośrednio z bazy NFZ.</p>
+      <h1 class="mt-4 text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900">Znajdź najszybszy termin NFZ</h1>
+      <p class="mt-1 text-sm text-zinc-600">Przeszukuje bazę NFZ i układa placówki od najwcześniej dostępnego terminu.</p>
     </header>
 
     <form id="search-form" class="space-y-5 rounded-2xl bg-white p-5 sm:p-7 shadow-sm ring-1 ring-zinc-900/5">
       <div>
-        <label for="benefit" class="block text-xs font-semibold uppercase tracking-wider text-zinc-500">Świadczenie / Specjalizacja</label>
-        <input type="text" id="benefit" placeholder="np. kardiolog, okulista, rezonans" required class="mt-1.5 block w-full rounded-lg border-0 px-3.5 py-2.5 text-zinc-900 ring-1 ring-zinc-200 focus:ring-2 focus:ring-teal-600 text-base" />
+        <label for="benefit" class="block text-xs font-semibold uppercase tracking-wider text-zinc-500">Świadczenie / Specjalizacja / Kod resortowy</label>
+        <input type="text" id="benefit" placeholder="np. kardiolog, okulista lub kod: 1100, 1600" required class="mt-1.5 block w-full rounded-lg border-0 px-3.5 py-2.5 text-zinc-900 ring-1 ring-zinc-200 focus:ring-2 focus:ring-teal-600 text-base" />
+        <p id="benefit-hint" class="mt-1.5 text-xs text-teal-700 font-medium hidden"></p>
       </div>
 
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -66,8 +67,14 @@
         </div>
       </div>
 
+      <div class="flex items-center justify-between pt-2">
+        <button type="button" id="locate-btn" class="text-xs text-teal-700 font-semibold hover:underline inline-flex items-center gap-1.5">
+          <span>📍</span> <span id="locate-text">Udostępnij lokalizację (opcjonalnie)</span>
+        </button>
+      </div>
+
       <button type="submit" id="submit-btn" class="w-full rounded-lg bg-teal-600 py-3 text-sm font-semibold text-white shadow hover:bg-teal-700 transition active:scale-[0.99]">
-        Szukaj wolnych terminów
+        Szukaj najszybszych terminów
       </button>
     </form>
 
@@ -76,6 +83,74 @@
   </div>
 
   <script>
+    const MONTHS = ["sty", "lut", "mar", "kwi", "maj", "cze", "lip", "sie", "wrz", "paź", "lis", "gru"];
+    const CODES = {
+      "1010": "chorób wewnętrznych",
+      "1020": "diabetolog",
+      "1030": "endokrynolog",
+      "1050": "gastroenterolog",
+      "1100": "kardiolog",
+      "1101": "kardiologii dziecięcej",
+      "1120": "dermatolog",
+      "1200": "neurolog",
+      "1220": "onkolog",
+      "1240": "rehabilitac",
+      "1270": "chorób płuc",
+      "1280": "reumatolog",
+      "1340": "alergolog",
+      "1450": "chirurgii ogólnej",
+      "1500": "ortoped",
+      "1570": "neurochirurg",
+      "1580": "otorynolaryngolog",
+      "1600": "okulist",
+      "1610": "okulist",
+      "1640": "urolog",
+      "1700": "ginekolog",
+      "1790": "psychiatrycz"
+    };
+
+    let userCoords = null;
+    const benefitInput = document.getElementById("benefit");
+    const hintEl = document.getElementById("benefit-hint");
+    const locateBtn = document.getElementById("locate-btn");
+    const locateText = document.getElementById("locate-text");
+
+    benefitInput.addEventListener("input", () => {
+      const val = benefitInput.value.trim();
+      if (CODES[val]) {
+        hintEl.textContent = `Kod resortowy ${val} → szukam: ${CODES[val]}`;
+        hintEl.classList.remove("hidden");
+      } else {
+        hintEl.classList.add("hidden");
+      }
+    });
+
+    locateBtn.addEventListener("click", () => {
+      if (!navigator.geolocation) return alert("Twoja przeglądarka nie obsługuje geolokalizacji.");
+      locateText.textContent = "Pobieram pozycję…";
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          userCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          locateText.textContent = "Lokalizacja zapisana ✓";
+          locateBtn.classList.replace("text-teal-700", "text-emerald-600");
+        },
+        () => {
+          locateText.textContent = "Błąd pobierania pozycji";
+        }
+      );
+    });
+
+    function calcDistance(lat1, lon1, lat2, lon2) {
+      if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
     const form = document.getElementById("search-form");
     const statusEl = document.getElementById("status");
     const resultsEl = document.getElementById("results");
@@ -85,52 +160,104 @@
       e.preventDefault();
       resultsEl.innerHTML = "";
       statusEl.classList.remove("hidden");
-      statusEl.textContent = "Pobieram dane z oficjalnego API NFZ…";
+      statusEl.textContent = "Pobieram dane i analizuję terminy…";
       submitBtn.disabled = true;
 
-      const benefit = encodeURIComponent(document.getElementById("benefit").value.trim());
+      const rawBenefit = benefitInput.value.trim();
+      const codeMatch = CODES[rawBenefit];
+      const searchTerm = codeMatch || rawBenefit;
       const province = document.getElementById("province").value;
       const caseType = document.querySelector('input[name="case"]:checked').value;
 
-      let url = `https://api.nfz.gov.pl/app-itl-api/queues?page=1&limit=25&format=json&case=${caseType}&benefit=${benefit}`;
-      if (province) url += `&province=${province}`;
-
       try {
+        let url = `https://api.nfz.gov.pl/app-itl-api/queues?page=1&limit=50&format=json&case=${caseType}&benefit=${encodeURIComponent(searchTerm)}`;
+        if (province) url += `&province=${province}`;
+
         const res = await fetch(url);
         if (!res.ok) throw new Error(`Błąd HTTP ${res.status}`);
-        const data = await res.json();
-        const items = data.data || [];
+        const json = await res.json();
+        const rawItems = json.data || [];
 
-        if (items.length === 0) {
-          statusEl.textContent = "Nie znaleziono placówek dla podanych kryteriów.";
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const parsed = [];
+
+        rawItems.forEach((item) => {
+          const attr = item.attributes;
+          // Obsługa formatu z myślnikiem i podkreślnikiem
+          const rawDate = attr.dates?.applicable?.['first-available-date'] || 
+                          attr.dates?.applicable?.first_available_date;
+          if (!rawDate) return;
+
+          const dateObj = new Date(rawDate);
+          if (isNaN(dateObj.getTime())) return;
+
+          const diffDays = Math.round((dateObj - today) / (1000 * 60 * 60 * 24));
+          if (diffDays < 0) return; // Pomijamy historyczne zgłoszenia z przeszłości
+
+          let dist = null;
+          if (userCoords && attr.latitude && attr.longitude) {
+            dist = calcDistance(userCoords.lat, userCoords.lng, parseFloat(attr.latitude), parseFloat(attr.longitude));
+          }
+
+          parsed.push({
+            provider: attr.provider || "Placówka",
+            place: attr.place || "",
+            address: [attr.address, attr.locality].filter(Boolean).join(", "),
+            phone: attr.phone ? attr.phone.split(/[\/,;]/)[0].trim() : null,
+            date: dateObj,
+            days: diffDays,
+            dist: dist
+          });
+        });
+
+        // SORTOWANIE OD NAJBLIŻSZEJ DATY
+        parsed.sort((a, b) => a.date - b.date);
+
+        if (parsed.length === 0) {
+          statusEl.textContent = "Brak aktywnych wolnych terminów dla podanych kryteriów.";
           return;
         }
 
-        statusEl.textContent = `Znaleziono ${items.length} placówek:`;
-        
-        items.forEach((item) => {
-          const attr = item.attributes;
-          const date = attr.dates?.applicable?.first_available_date || "Brak danych o terminie";
-          const card = document.createElement("div");
-          card.className = "rounded-xl bg-white p-5 shadow-sm ring-1 ring-zinc-900/5";
+        statusEl.textContent = `Znaleziono ${parsed.length} placówek z wolnymi terminami (posortowane chronologicznie):`;
+
+        parsed.forEach((item, idx) => {
+          const day = String(item.date.getDate()).padStart(2, "0");
+          const month = MONTHS[item.date.getMonth()];
+          const year = item.date.getFullYear();
+          const card = document.createElement("article");
+          card.className = "rounded-2xl bg-white p-5 shadow-sm ring-1 ring-zinc-900/5";
+
           card.innerHTML = `
             <div class="flex items-start justify-between gap-4">
-              <div>
-                <h3 class="font-semibold text-zinc-900 leading-snug">${attr.provider || "Placówka"}</h3>
-                <p class="text-xs text-zinc-500 mt-0.5">${attr.place || ""}</p>
-                <p class="text-sm text-zinc-600 mt-2">${attr.address || ""}, ${attr.locality || ""}</p>
-                ${attr.phone ? `<a href="tel:${attr.phone.split(/[\/,;]/)[0]}" class="inline-block mt-3 text-xs font-semibold text-teal-700 bg-teal-50 px-2.5 py-1 rounded-full ring-1 ring-teal-100">📞 ${attr.phone}</a>` : ""}
+              <div class="min-w-0 flex-1">
+                <span class="text-[11px] font-bold text-teal-700 uppercase tracking-wider">#${idx + 1}</span>
+                <h3 class="mt-1 font-semibold text-zinc-900 leading-snug">${item.provider}</h3>
+                ${item.place ? `<p class="text-xs text-zinc-500 mt-0.5">${item.place}</p>` : ""}
+                <p class="text-sm text-zinc-600 mt-2">${item.address}</p>
+                <div class="mt-3 flex flex-wrap items-center gap-2">
+                  ${item.phone ? `<a href="tel:${item.phone}" class="inline-flex items-center gap-1.5 rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700 ring-1 ring-teal-100 hover:bg-teal-100">📞 ${item.phone}</a>` : ""}
+                  ${item.dist != null ? `<span class="inline-flex items-center rounded-full bg-zinc-100 px-2.5 py-1 text-xs text-zinc-600 font-medium">📍 ${item.dist.toFixed(1)} km</span>` : ""}
+                </div>
               </div>
               <div class="text-right shrink-0">
-                <span class="text-xs uppercase text-zinc-400 font-semibold block">Pierwszy termin</span>
-                <span class="text-lg font-bold text-teal-700">${date}</span>
+                <div class="flex items-baseline gap-1 justify-end">
+                  <span class="text-3xl font-bold tracking-tight text-zinc-900 tabular-nums">${day}</span>
+                  <span class="text-base font-semibold text-zinc-700">${month}</span>
+                  <span class="text-xs text-zinc-400">${year}</span>
+                </div>
+                <div class="text-xs font-medium text-teal-700 mt-1">
+                  ${item.days === 0 ? "Dziś" : (item.days === 1 ? "Jutro" : `za ${item.days} dni`)}
+                </div>
               </div>
             </div>
           `;
           resultsEl.appendChild(card);
         });
+
       } catch (err) {
-        statusEl.textContent = "Wystąpił błąd podczas łączenia z NFZ: " + err.message;
+        statusEl.textContent = "Błąd komunikacji z API NFZ: " + err.message;
       } finally {
         submitBtn.disabled = false;
       }
